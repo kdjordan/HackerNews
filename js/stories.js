@@ -10,9 +10,11 @@ let favoriteStoryList
 
 async function getAndShowStoriesOnStart() {
   // localStorage.removeItem('favoriteStories')
-  //get favorited Stories from user class whiich has grabbed favorites stories on refresh from localStorage
+  //get favorited Stories from user class which has grabbed favorites stories on refresh from localStorage
   favoriteStoryList = checkForFavoriteStories()
+  console.log('favorite stories on int ', favoriteStoryList)
   storyList = await StoryList.getStories();
+  console.log(storyList)
   console.log('the stories list be like: ', storyList)
   console.log('the favorite stories list be like: ', favoriteStoryList)
 
@@ -128,22 +130,17 @@ $submitForm.on('submit', createStoryFromForm)
  */
 
 function favoriteStory() {
-  let storyIsFavorite = favoriteStoryList.stories.filter(story => {
-    console.log(story)
-    return story.storyId === $(this).parent()[0].id
-  })
-  console.log('filter ', storyIsFavorite)
-  console.log($(this).parent()[0].id)
-  if($(this).children().hasClass('far') && storyIsFavorite.length == 0) {
-    console.log('adding ', $(this).parent()[0].id)
-    //a favorite story
+  let isFavorite = checkIfStoryIsFavorite($(this).parent()[0].id)
+  //check to see if id is not already a favorite and the start is not filled
+  if($(this).children().hasClass('far') && !isFavorite) {
+    //update UI .start class to be filled
     $(this).children().removeClass('far').addClass('fas')
-    //add story to favorites array and localStorage by passing id 
+    //update isFavorite in StoryList for storyId
     addFavoriteStory($(this).parent()[0].id)
   } else {
-    //not a favorite story
+    //update UI .start class to be filled
     $(this).children().removeClass('fas').addClass('far')
-    //remove story from favorites array and localStorage by passing id 
+    //update isFavorite in StoryList for storyId
     removeFavoriteStory($(this).parent()[0].id)
   }
 }
@@ -174,10 +171,13 @@ function addFavoriteStory(opId) {
   console.log('addin ', opId)
   for (let story of storyList.stories) {
     if(story.storyId === opId) {
-      favoriteStoryList.stories.push(story)
+      story.isFavorite = true
     }
   }
-  saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
+  console.log('after true', storyList)
+  let favoriteStories = getFavoriteStories()
+  // saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
+  saveUserFavoriteStoriesLocalStorage(favoriteStories)
 }
 
 /**
@@ -185,17 +185,19 @@ function addFavoriteStory(opId) {
  * @param {string} - story id
  */
 function removeFavoriteStory(opId) {
-  favoriteStoryList.stories = favoriteStoryList.stories.filter(story => {
-    return story.storyId !== opId
-  })
+  for (let story of storyList.stories) {
+    if(story.storyId === opId) {
+      story.isFavorite = false
+    }
+  }
   ///remove from DOM $favoritedStories
   $(`#favorited-stories #${opId}`).remove()
-  //if there are no favorite stories - display mssg
-  if(favoriteStoryList.stories.length === 0) {
+  let favoriteStories = getFavoriteStories()
+  // //if there are no favorite stories - display mssg
+  if(favoriteStories.length === 0) {
     $favoritedStories.html('<h5>No favorites added!</h5>')
   }
-  saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
-  addFavoritestoUI
+  saveUserFavoriteStoriesLocalStorage(favoriteStories)
 }
 //#\30 6af647b-5479-4524-aa22-3ac69890c819
 /**
@@ -215,4 +217,22 @@ async function deleteStory() {
   } catch(e) {
     alert('Not your story to delete !')
   }
+}
+
+function getFavoriteStories() {
+  let favoriteStories = storyList.stories.filter(story => {
+    // console.log(story)
+    return story.isFavorite === true
+  })
+  console.log('returning favotrite stories ', favoriteStories)
+  return favoriteStories
+}
+
+function checkIfStoryIsFavorite(id) {
+  console.log('here')
+  let isFavorite = storyList.stories.filter(story => {
+    return story.storyId === id && story.isFavorite === true
+  })
+  console.log('favorites in check' , isFavorite)
+  return isFavorite.length !== 0 ? true : false
 }

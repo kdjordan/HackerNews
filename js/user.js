@@ -81,7 +81,7 @@ async function checkForRememberedUser() {
  * Storing/recalling favorite stories
  */
 
-/** If there are favorite stories - set up a new StoryList and return it
+/** If there are favorite stories - grab the IDS update main StoryList to reflect
  *  Else - construct a new StoryList with empty stories array
  */
 function checkForFavoriteStories() {
@@ -114,10 +114,13 @@ function saveUserCredentialsInLocalStorage() {
  * (or the user revisits the site later), their favorited stories are available
  */
 
-function saveUserFavoriteStoriesLocalStorage(favoritesArr) {
+function saveUserFavoriteStoriesLocalStorage(stories) {
   if (currentUser) {
+    console.log('the fovaorites goin local ', stories)
+    let favoriteStoryList = new StoryList(stories)
     localStorage.removeItem('favoriteStories')
-    localStorage.setItem("favoriteStories", JSON.stringify(favoritesArr));
+    localStorage.setItem('favoriteStories', JSON.stringify(favoriteStoryList))
+    console.log('localStorage ', localStorage.getItem('favoriteStories'))
   }
 }
 
