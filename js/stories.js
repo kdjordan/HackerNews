@@ -221,8 +221,8 @@ function addFavoriteStarsToFavoriteList() {
       if(fav.storyId === li.id) {
         console.log(fav.storyId)
         console.log(li.id)
-        console.log($(`#${li.id} i .star`))
-        $(`#${li.id} i`).removeClass('far').addClass('fas')
+        console.log($(`#${li.id} i`).children())
+        $(`#${li.id} i`).children().removeClass('far').addClass('fas')
       }
     }
   })
