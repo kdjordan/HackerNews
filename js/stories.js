@@ -195,7 +195,7 @@ function removeFavoriteStory(opId) {
     $favoritedStories.html('<h5>No favorites added!</h5>')
   }
   saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
-  addFavoritestoUI
+  addFavoritestoUI()
 }
 //#\30 6af647b-5479-4524-aa22-3ac69890c819
 /**
@@ -203,13 +203,20 @@ function removeFavoriteStory(opId) {
  * references class ID of parent li in DOM
  * needs currentUser to get token for acces to API (protected call)
  */
-async function deleteStory() {
+async function deleteStory(evt) {
+  console.log('deleting ', $(this).closest('ol')[0].id, currentUser)
   try {
     //remove story from favorites if it's in there 
     removeFavoriteStory($(this).parent()[0].id) 
-    //remove Story from storyList
-    await StoryList.deleteStory(currentUser, $(this).parent()[0].id)
-    $storiesLoadingMsg.append();
+
+    if($(this).closest('ol')[0].id == 'all-stories-list') {
+      //remove Story from storyList
+      await StoryList.deleteStory(currentUser, $(this).parent()[0].id)
+      $storiesLoadingMsg.append();
+
+    } else {
+      console.log('delete from favorites')
+    }
     //reload stories list
     getAndShowStoriesOnStart()
   } catch(e) {
