@@ -81,17 +81,27 @@ async function checkForRememberedUser() {
  * Storing/recalling favorite stories
  */
 
-/** If there are favorite stories - set up a new StoryList and return it
- *  Else - construct a new StoryList with empty stories array
+/** If there are favorite stories - assign them to  currentUser
+ * 
  */
-function checkForFavoriteStories() {
+function getFavoriteStoriesLocalStorage() {
   const favoritedStories = localStorage.getItem('favoriteStories')
   if(favoritedStories) {
-    return new StoryList(JSON.parse(favoritedStories).stories)
-  } else {
-    return new StoryList([])
+    console.log('favorites from local are ', JSON.parse(favoritedStories))
+    currentUser.favorites = JSON.parse(favoritedStories)
   }
+  addFavoriteStars()
 }
+
+
+//  for ( let fav of currentUser.favorites) {
+//    console.log('fav is ', fav)
+//    console.log('this is ', $(this))
+//     // if(fav.storyId ===  )
+//  }
+  // console.log('updating these ', $(''))
+
+
 
 /** Sync current user information to localStorage.
  *
@@ -108,16 +118,16 @@ function saveUserCredentialsInLocalStorage() {
 
 
 /******************************************************************************
-/** Sync current user favorited Stories to localStorage.
+/** Sync current user favorites to localStorage.
  *
- * We store the favorited storiesin localStorage so when the page is refreshed
+ * We store the favorited stories in localStorage so when the page is refreshed
  * (or the user revisits the site later), their favorited stories are available
  */
 
-function saveUserFavoriteStoriesLocalStorage(favoritesArr) {
+function saveUserFavoriteStoriesLocalStorage() {
   if (currentUser) {
     localStorage.removeItem('favoriteStories')
-    localStorage.setItem("favoriteStories", JSON.stringify(favoritesArr));
+    localStorage.setItem("favoriteStories", JSON.stringify(currentUser.favorites));
   }
 }
 

@@ -3,23 +3,19 @@
 // This is the global list of the stories, an instance of StoryList
 let storyList;
 
-// This is the global list of the favorited stories, an array of favorite story IDs
-// let favoriteStoryArr = []
-let favoriteStoryList 
 /** Get and show stories when site first loads. */
 
 async function getAndShowStoriesOnStart() {
   // localStorage.removeItem('favoriteStories')
-  //get favorited Stories from user class whiich has grabbed favorites stories on refresh from localStorage
-  favoriteStoryList = checkForFavoriteStories()
+  //check for existence of favoritesStories in localStorage
+  getFavoriteStoriesLocalStorage()
+  console.log('current user ', currentUser)
   storyList = await StoryList.getStories();
-  console.log('the stories list be like: ', storyList)
-  console.log('the favorite stories list be like: ', favoriteStoryList)
-
-  $storiesLoadingMsg.remove();
   
+  $storiesLoadingMsg.remove();
   putStoriesOnPage();
-  addFavoritestoUI()
+  //update .star class for saved favorited stories
+  addFavoriteStars()
 }
 
 /**
@@ -72,16 +68,18 @@ function putStoriesOnPage() {
 /** Gets list of favorite stories  favoriteStoryList, generates their HTML, and puts on page. */
 
 function putFavoriteStoriesOnPage() {
-  console.debug("putFavoriteStoriesOnPage", favoriteStoryList);
-  if(favoriteStoryList.stories.length > 0) {
-    $favoritedStories.empty();
+  console.debug("putFavoriteStoriesOnPage");
+  
+  if(currentUser.favorites.length > 0) {
+      $favoritedStories.empty();
     // loop through all of our stories and generate HTML for them
-    for (let story of favoriteStoryList.stories) {
+    for (let story of currentUser.favorites) {
       console.log(new Story(story))
       const $story = generateStoryMarkup(new Story(story));
       $favoritedStories.append($story);
     }
     $favoritedStories.show();
+    addFavoriteStarsToFavoriteList()
     //add click hadler for starring favorites on class star
     $(".star").on("click", favoriteStory)
     //add click hadler for removing stories on class trash-can
@@ -128,17 +126,10 @@ $submitForm.on('submit', createStoryFromForm)
  */
 
 function favoriteStory() {
-  let storyIsFavorite = favoriteStoryList.stories.filter(story => {
-    console.log(story)
-    return story.storyId === $(this).parent()[0].id
-  })
-  console.log('filter ', storyIsFavorite)
-  console.log($(this).parent()[0].id)
-  if($(this).children().hasClass('far') && storyIsFavorite.length == 0) {
-    console.log('adding ', $(this).parent()[0].id)
-    //a favorite story
+  if($(this).children().hasClass('far')) {
+    //a favorite story - update .star class to be filled
     $(this).children().removeClass('far').addClass('fas')
-    //add story to favorites array and localStorage by passing id 
+    //add story to User favorites array and localStorage by passing id 
     addFavoriteStory($(this).parent()[0].id)
   } else {
     //not a favorite story
@@ -148,23 +139,6 @@ function favoriteStory() {
   }
 }
 
-/**
- * updates .star to reflect favorited stories in favoriteStoryList
- * 
- */
-function addFavoritestoUI() {
-  // console.log('starring mfrs ', favoriteStoryList)
-  $.each($('li'), (i, el) => {
-    for (let story of favoriteStoryList.stories) {
-      if(story.storyId === el.id) {
-        // console.log($(`#${el.id} .star`).children())
-        console.log('runnin ', story)
-        $(`#${el.id} .star`).children().removeClass('far').addClass('fas')
-        console.log('now ', $(`#${el.id} .star`).children())
-      }
-    }
-  })
-}
 
 /**
  * adds favorite story from storyList to favoriteStoryList and localStorage
@@ -172,12 +146,15 @@ function addFavoritestoUI() {
  */
 function addFavoriteStory(opId) {
   console.log('addin ', opId)
+  
   for (let story of storyList.stories) {
     if(story.storyId === opId) {
-      favoriteStoryList.stories.push(story)
+      console.log('currentUser favs', currentUser.favorites)
+      currentUser['favorites'].push(story)
     }
   }
-  saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
+  // console.log('addin ', currentUser.favorites)
+  saveUserFavoriteStoriesLocalStorage(currentUser.favorites)
 }
 
 /**
@@ -185,41 +162,68 @@ function addFavoriteStory(opId) {
  * @param {string} - story id
  */
 function removeFavoriteStory(opId) {
-  favoriteStoryList.stories = favoriteStoryList.stories.filter(story => {
+  //remove favorite story from user favorites
+  currentUser.favorites = currentUser.favorites.filter(story => {
     return story.storyId !== opId
   })
-  ///remove from DOM $favoritedStories
-  $(`#favorited-stories #${opId}`).remove()
-  //if there are no favorite stories - display mssg
-  if(favoriteStoryList.stories.length === 0) {
-    $favoritedStories.html('<h5>No favorites added!</h5>')
-  }
-  saveUserFavoriteStoriesLocalStorage(favoriteStoryList)
-  addFavoritestoUI()
+  console.log('removin ', currentUser.favorites)
+  saveUserFavoriteStoriesLocalStorage(currentUser.favorites)
 }
-//#\30 6af647b-5479-4524-aa22-3ac69890c819
+
 /**
  * deletes Story from DB - called from click hadler on class 'trash-can'
  * references class ID of parent li in DOM
  * needs currentUser to get token for acces to API (protected call)
  */
-async function deleteStory(evt) {
+async function deleteStory() {
   console.log('deleting ', $(this).closest('ol')[0].id, currentUser)
   try {
-    //remove story from favorites if it's in there 
-    removeFavoriteStory($(this).parent()[0].id) 
+    //remove Story from storyList
+    await StoryList.deleteStory(currentUser, $(this).parent()[0].id)
+    $storiesLoadingMsg.append();
 
-    if($(this).closest('ol')[0].id == 'all-stories-list') {
-      //remove Story from storyList
-      await StoryList.deleteStory(currentUser, $(this).parent()[0].id)
-      $storiesLoadingMsg.append();
-
-    } else {
-      console.log('delete from favorites')
-    }
+  
+    console.log('delete from favorites')
+  
     //reload stories list
     getAndShowStoriesOnStart()
   } catch(e) {
     alert('Not your story to delete !')
   }
 }
+
+
+/**
+ * updates star in UI to be filled if the user has farvorited a story
+ */
+function addFavoriteStars() {
+  //check if we are in the favorites tab and add stars to that list
+  console.log('running these li', $('#nav-forites').find('li'))
+  $(`li`).each((i, li) => {
+    console.log('running these li')
+    for(let fav of currentUser.favorites) {
+      if(fav.storyId === li.id) {
+        $(`#${li.id} i`).removeClass('far').addClass('fas')
+      }
+    }
+  })
+} 
+
+/**
+ * updates star in UI on favorites list if the user has farvorited a story
+ */
+function addFavoriteStarsToFavoriteList() {
+  //check if we are in the favorites tab and add stars to that list
+  console.log('running these li', $(`#favorited-stories li`))
+  $(`#favorited-stories li`).each((i, li) => {
+    console.log('running these li')
+    for(let fav of currentUser.favorites) {
+      if(fav.storyId === li.id) {
+        console.log(fav.storyId)
+        console.log(li.id)
+        console.log($(`#${li.id} i .star`))
+        $(`#${li.id} i`).removeClass('far').addClass('fas')
+      }
+    }
+  })
+} 

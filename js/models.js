@@ -88,7 +88,12 @@ class StoryList {
     });
     return response.data
   }
-
+   /** Deletes story data using API, 
+   * @param user - currentUser - we need their token as this is a protected call
+   * @param sotryId - is of story to be deleted
+   * will return reponse.data and eill be caught by try catch block if there is an error returned
+   * Returns the new Story instance
+   */
   static async deleteStory(user, storyId) {
     const response = await axios({
       url: `${BASE_URL}/stories/${storyId}`,
@@ -99,14 +104,6 @@ class StoryList {
     });
     return response.data
   } 
-
-//   static async getStoryById(storyId) {
-//     const response = await axios({
-//       url: `${BASE_URL}/stories/${storyId}`,
-//       method: "get",
-//     });
-//     return response.data
-//   } 
 }
 
 
