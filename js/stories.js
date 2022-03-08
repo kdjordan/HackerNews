@@ -97,6 +97,11 @@ function putMyStoriesOnPage() {
       const $story = generateStoryMarkup(new Story(story));
       $myStories.append($story);
     }
+    addFavoriteStars('my-stories')
+    //add click hadler for starring favorites on class star
+    $(".star").on("click", favoriteStory)
+    //add click hadler for removing stories on class trash-can
+    $(".trash-can").on("click", deleteStory)
   } else {
     $myStories.html('<h5>You have submitted no stories!</h5>')
     $myStories.show();
@@ -120,17 +125,21 @@ async function createStoryFromForm(evt) {
     url: $url, 
   }
   //call static function in models.js to add newStory to DB
-  await StoryList.addStory(currentUser, newStory)
+  let $res = await StoryList.addStory(currentUser, newStory)
   //reset input fields
   $('#create-author').val('')
   $('#create-title').val('')
   $('#create-url').val('')
   //hide form with animation
   $submitForm.slideUp()
-  //show loadingMsg while new Storyies made form repsonse and added to DOM
-  $storiesLoadingMsg.show();
+  
   //reload all stories from DB
-  getAndShowStoriesOnStart()
+  $allStoriesList.empty();
+  putStoriesOnPage();
+  //add story to currentUser ownStories
+  console.log('add new story to current User ', $res)
+  console.log('currentUSer, ', currentUser)
+  currentUser.ownStories.push($res)
 }
 
 $submitForm.on('submit', createStoryFromForm)
@@ -205,11 +214,13 @@ async function deleteStory() {
     if( $list === 'all-stories-list') {
       $(`#${$list} #${$storyId}`).remove()
       // putStoriesOnPage()
-    } else if( $(this).closest('ol')[0].id === 'favorited-stories'){
+    } else if( $list === 'favorited-stories'){
       console.log('running here')
       //reload stories list
       putFavoriteStoriesOnPage()
       // putStoriesOnPage()
+    } else if($list === 'my-stories') {
+      $(`#${$list} #${$storyId}`).remove()
     }
   } catch(e) {
     console.log('the error ', e)
