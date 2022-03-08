@@ -86,8 +86,9 @@ async function checkForRememberedUser() {
  */
 function getFavoriteStoriesLocalStorage() {
   const favoritedStories = localStorage.getItem('favoriteStories')
-  if(favoritedStories) {
+  if(favoritedStories && currentUser) {
     currentUser.favorites = JSON.parse(favoritedStories)
+    console.log()
   }
 }
 
@@ -102,10 +103,6 @@ function saveUserCredentialsInLocalStorage() {
     localStorage.setItem("token", currentUser.loginToken);
     localStorage.setItem("username", currentUser.username);
   }
-}
-
-function emptyFavs() {
-  localStorage.removeItem('favoriteStories')
 }
 
 
