@@ -87,21 +87,9 @@ async function checkForRememberedUser() {
 function getFavoriteStoriesLocalStorage() {
   const favoritedStories = localStorage.getItem('favoriteStories')
   if(favoritedStories) {
-    console.log('favorites from local are ', JSON.parse(favoritedStories))
     currentUser.favorites = JSON.parse(favoritedStories)
   }
-  addFavoriteStars()
 }
-
-
-//  for ( let fav of currentUser.favorites) {
-//    console.log('fav is ', fav)
-//    console.log('this is ', $(this))
-//     // if(fav.storyId ===  )
-//  }
-  // console.log('updating these ', $(''))
-
-
 
 /** Sync current user information to localStorage.
  *
@@ -116,6 +104,10 @@ function saveUserCredentialsInLocalStorage() {
   }
 }
 
+function emptyFavs() {
+  localStorage.removeItem('favoriteStories')
+}
+
 
 /******************************************************************************
 /** Sync current user favorites to localStorage.
@@ -125,10 +117,12 @@ function saveUserCredentialsInLocalStorage() {
  */
 
 function saveUserFavoriteStoriesLocalStorage() {
+  console.log('addin ', currentUser.favorites)
   if (currentUser) {
-    localStorage.removeItem('favoriteStories')
+    localStorage.removeItem("favoriteStories")
     localStorage.setItem("favoriteStories", JSON.stringify(currentUser.favorites));
   }
+  console.log('now ', localStorage.getItem("favoriteStories"))
 }
 
 /******************************************************************************

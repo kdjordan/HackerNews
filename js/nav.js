@@ -9,7 +9,6 @@
 function navAllStories(evt) {
   hidePageComponents();
   putStoriesOnPage();
-  addFavoriteStars()
 }
 
 $body.on("click", "#nav-all", navAllStories);
@@ -24,7 +23,7 @@ function navSubmitStory(evt) {
 
 $navSubmitStory.on("click", navSubmitStory);
 
-function navFavorites() {
+function navFavorites(evt) {
   // console.debug('fovorites clicked', evt)
   hidePageComponents();
   putFavoriteStoriesOnPage()
