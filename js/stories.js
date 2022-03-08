@@ -7,16 +7,15 @@ let storyList;
 
 async function getAndShowStoriesOnStart() {
   // console.log(localStorage)
+  $storiesLoadingMsg.show()
   //check for existence of favoritesStories in localStorage
   getFavoriteStoriesLocalStorage()
-  emptyFavs()
-  console.log('current user ', currentUser)
+  // emptyFavs()
+  // console.log('current user ', currentUser)
   storyList = await StoryList.getStories();
   
   $storiesLoadingMsg.remove();
   putStoriesOnPage();
-  //update .star class for saved favorited stories
-  
 }
 
 /**
@@ -49,8 +48,6 @@ function generateStoryMarkup(story) {
 /** Gets list of stories from server, generates their HTML, and puts on page. */
 
 function putStoriesOnPage() {
-  console.debug("putStoriesOnPage");
-
   $allStoriesList.empty();
 
   // loop through all of our stories and generate HTML for them
@@ -70,7 +67,7 @@ function putStoriesOnPage() {
 /** Gets list of favorite stories  favoriteStoryList, generates their HTML, and puts on page. */
 
 function putFavoriteStoriesOnPage() {
-  console.debug("putFavoriteStoriesOnPage");
+  console.debug("putFavoriteStoriesOnPage", );
   $favoritedStories.empty();
   
   if(currentUser.favorites.length > 0) {
@@ -87,6 +84,22 @@ function putFavoriteStoriesOnPage() {
     $(".trash-can").on("click", deleteStory)
   } else {
     $favoritedStories.html('<h5>No favorites added!</h5>')
+  }
+}
+
+function putMyStoriesOnPage() {
+  console.debug("putMyStoriesOnPage", );
+  $myStories.empty();
+
+  if(currentUser.ownStories.length > 0) {
+    // loop through all of our stories and generate HTML for them
+    for (let story of currentUser.ownStories) {
+      const $story = generateStoryMarkup(new Story(story));
+      $myStories.append($story);
+    }
+  } else {
+    $myStories.html('<h5>You have submitted no stories!</h5>')
+    $myStories.show();
   }
 }
 
@@ -128,8 +141,8 @@ $submitForm.on('submit', createStoryFromForm)
  * calls other functions to update localStorage with favorited story
  */
 
-function favoriteStory(evt) {
-  console.log('favoriteing ', evt.target.closest('ol').id)
+function favoriteStory() {
+  // console.log('favoriteing ', evt.target.closest('ol').id)
   if($(this).children().hasClass('far')) {
     //a favorite story - update .star class to be filled
     $(this).children().removeClass('far').addClass('fas')
@@ -170,7 +183,6 @@ function removeFavoriteStory(opId) {
   currentUser.favorites = currentUser.favorites.filter(story => {
     return story.storyId !== opId
   })
-  console.log('removin ', currentUser.favorites)
   saveUserFavoriteStoriesLocalStorage(currentUser.favorites)
 }
 
@@ -180,22 +192,29 @@ function removeFavoriteStory(opId) {
  * needs currentUser to get token for acces to API (protected call)
  */
 async function deleteStory() {
-  console.log('deleting ', $(this).closest('ol')[0].id, currentUser)
+  console.log('deleting ', $(this).parent()[0].id)
+  console.log('deleting from ',  $(this).closest('ol')[0].id)
+  let $storyId = $(this).parent()[0].id
+  let $list = $(this).closest('ol')[0].id
   try {
     //remove Story from storyList
-    await StoryList.deleteStory(currentUser, $(this).parent()[0].id)
+    await StoryList.deleteStory(currentUser, $storyId)
 
-  
-    console.log('delete from favorites')
-    removeFavoriteStory($(this).parent()[0].id)
-    if( $(this).closest('ol')[0].id === 'all-stories-list') {
-      getAndShowStoriesOnStart()
-    } else {
+    // console.log('delete from favorites', $(this).closest('ol')[0].id)
+    removeFavoriteStory($storyId)
+    if( $list === 'all-stories-list') {
+      $(`#${$list} #${$storyId}`).remove()
+      // putStoriesOnPage()
+    } else if( $(this).closest('ol')[0].id === 'favorited-stories'){
+      console.log('running here')
       //reload stories list
       putFavoriteStoriesOnPage()
+      // putStoriesOnPage()
     }
   } catch(e) {
+    console.log('the error ', e)
     alert('Not your story to delete !')
+
   }
 }
 

@@ -117,12 +117,10 @@ function emptyFavs() {
  */
 
 function saveUserFavoriteStoriesLocalStorage() {
-  console.log('addin ', currentUser.favorites)
   if (currentUser) {
     localStorage.removeItem("favoriteStories")
     localStorage.setItem("favoriteStories", JSON.stringify(currentUser.favorites));
   }
-  console.log('now ', localStorage.getItem("favoriteStories"))
 }
 
 /******************************************************************************
