@@ -6,16 +6,17 @@
 
 /** Show main list of all stories when click site name */
 
-function navAllStories() {
+function navAllStories(evt) {
   hidePageComponents();
-  getAndShowStoriesOnStart()
+  getAndShowStoriesOnStart(evt)
 }
 
 $body.on("click", "#nav-all", navAllStories);
 
-function navSubmitStory() {
+function navSubmitStory(evt) {
   hidePageComponents();
-  putStoriesOnPage();
+  // putStoriesOnPage(evt);
+  putStories(evt);
   //show story submit form
   $submitForm.show()
   
@@ -23,18 +24,20 @@ function navSubmitStory() {
 
 $navSubmitStory.on("click", navSubmitStory);
 
-function myFavorites() {
+function myFavorites(evt) {
   hidePageComponents();
-  putFavoriteStoriesOnPage()
+  // putFavoriteStoriesOnPage(evt)
+  putStories(evt);
   $favoritedStories.show()
 } 
 
 $navFavorites.on("click", myFavorites);
 
 
-function myStories() {
+function myStories(evt) {
   hidePageComponents();
-  putMyStoriesOnPage()
+  // putMyStoriesOnPage(evt)
+  putStories(evt);
   $myStories.show()
 } 
 

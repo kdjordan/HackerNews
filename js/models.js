@@ -102,7 +102,6 @@ class StoryList {
         "token": `${user.loginToken}`,
       }
     });
-    console.log(response.data)
     return response.data
   } 
 }

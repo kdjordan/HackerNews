@@ -84,12 +84,15 @@ async function checkForRememberedUser() {
 /** If there are favorite stories - assign them to  currentUser
  * 
  */
-function getFavoriteStoriesLocalStorage() {
-  const favoritedStories = localStorage.getItem('favoriteStories')
-  if(favoritedStories && currentUser) {
-    currentUser.favorites = JSON.parse(favoritedStories)
-    console.log()
+function checkStoriesLocalStorage() {
+  const $favoritedStories = localStorage.getItem('favoriteStories')
+  const $myStories = localStorage.getItem('myStories')
+  if(currentUser) {
+    if($favoritedStories) currentUser.favorites = JSON.parse($favoritedStories)
+    if($myStories) currentUser.ownStories = JSON.parse($myStories)
   }
+  // currentUser.favorites = []
+  // currentUser.ownStories = []
 }
 
 /** Sync current user information to localStorage.
@@ -114,9 +117,24 @@ function saveUserCredentialsInLocalStorage() {
  */
 
 function saveUserFavoriteStoriesLocalStorage() {
+  console.log('saving local')
   if (currentUser) {
     localStorage.removeItem("favoriteStories")
     localStorage.setItem("favoriteStories", JSON.stringify(currentUser.favorites));
+  }
+}
+
+/******************************************************************************
+/** Sync current user favorites to localStorage.
+ *
+ * We store the favorited stories in localStorage so when the page is refreshed
+ * (or the user revisits the site later), their favorited stories are available
+ */
+
+function saveOwnStoriesLocalStorage() {
+  if (currentUser) {
+    localStorage.removeItem("ownStories")
+    localStorage.setItem("ownStories", JSON.stringify(currentUser.ownStories));
   }
 }
 

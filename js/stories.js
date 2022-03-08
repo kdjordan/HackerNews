@@ -6,16 +6,16 @@ let storyList;
 /** Get and show stories when site first loads. */
 
 async function getAndShowStoriesOnStart() {
-  // console.log(localStorage)
   $storiesLoadingMsg.show()
+  // localStorage.clear();
   //check for existence of favoritesStories in localStorage
-  getFavoriteStoriesLocalStorage()
-  // emptyFavs()
-  // console.log('current user ', currentUser)
+  checkStoriesLocalStorage()
+  
+  console.log('current user ', currentUser)
   storyList = await StoryList.getStories();
   
   $storiesLoadingMsg.remove();
-  putStoriesOnPage();
+  putStories();
 }
 
 /**
@@ -26,6 +26,7 @@ async function getAndShowStoriesOnStart() {
  */
 
 function generateStoryMarkup(story) {
+  // console.log('marking up ', story)
   const hostName = story.getHostName();
   return $(`
       <li id="${story.storyId}">
@@ -45,73 +46,76 @@ function generateStoryMarkup(story) {
     `);
 }
 
-/** Gets list of stories from server, generates their HTML, and puts on page. */
-
-function putStoriesOnPage() {
-  $allStoriesList.empty();
-
-  // loop through all of our stories and generate HTML for them
-  for (let story of storyList.stories) {
-    const $story = generateStoryMarkup(story);
-    
-    $allStoriesList.append($story);
+function getStoryParams(evt) {
+  let $targetId
+  let $currentStoryList
+  let $storiesToShow
+  //handle edge case where no event is passed on loading of page, but we need a OL to populate
+  //we'll give it 'nav-all' since we are on the homepage
+  if(!evt) {
+    $targetId = 'nav-all'
+  } else {
+    $targetId = evt.target.id   
   }
-  $allStoriesList.show();
-  addFavoriteStars('all-stories-list')
+  
+  //check to see what event id is making the call so we can setup which OL and which list
+  //of stories we want to display
+  if($targetId === 'nav-all' || $targetId == 'nav-submit-story' || $targetId == 'submit-form') {
+    $currentStoryList = $allStoriesList
+    $storiesToShow = storyList.stories
+  } else if($targetId  == 'nav-favorites'){
+    $currentStoryList = $favoritedStories
+    $storiesToShow = currentUser.favorites
+  } else if($targetId === 'nav-my-stories'){
+    $currentStoryList = $myStories
+    $storiesToShow = currentUser.ownStories
+  }
+  return {
+    $currentStoryList,
+    $storiesToShow
+  }
+}
+
+function putStories(evt) {
+  console.log('putting story ', evt)
+  let {$currentStoryList,  $storiesToShow} = getStoryParams(evt) 
+  
+  console.log('emptying ', $currentStoryList)
+  console.log('using ', $storiesToShow)
+  //prepare our OL to get the list
+  $currentStoryList.empty()
+
+  //check to see if we have an empty favorites or oenStories list and display mssg if so
+  if($storiesToShow.length === 0 &&  $currentStoryList === $favoritedStories) {
+    $currentStoryList.html('<h5>No favorites added!</h5>')
+  } else if($storiesToShow.length === 0 &&  $currentStoryList === $myStories){
+    $currentStoryList.html('<h5>You have submitted no stories!</h5>')
+  }
+
+  //create new Stories from our localStorage arrays and generate the markup
+  for (let story of $storiesToShow) {
+    const $story = generateStoryMarkup(new Story(story));
+    
+    $currentStoryList.append($story);
+  }
+
+  //display the html
+  $currentStoryList.show();
+  addFavoriteStars($currentStoryList)
+
   //add click hadler for starring favorites on class star
   $(".star").on("click", favoriteStory)
   //add click hadler for removing stories on class trash-can
   $(".trash-can").on("click", deleteStory)
+
+
 }
 
-/** Gets list of favorite stories  favoriteStoryList, generates their HTML, and puts on page. */
 
-function putFavoriteStoriesOnPage() {
-  console.debug("putFavoriteStoriesOnPage", );
-  $favoritedStories.empty();
-  
-  if(currentUser.favorites.length > 0) {
-    // loop through all of our stories and generate HTML for them
-    for (let story of currentUser.favorites) {
-      const $story = generateStoryMarkup(new Story(story));
-      $favoritedStories.append($story);
-    }
-    $favoritedStories.show();
-    addFavoriteStars('favorited-stories')
-    //add click hadler for starring favorites on class star
-    $(".star").on("click", favoriteStory)
-    //add click hadler for removing stories on class trash-can
-    $(".trash-can").on("click", deleteStory)
-  } else {
-    $favoritedStories.html('<h5>No favorites added!</h5>')
-  }
-}
-
-function putMyStoriesOnPage() {
-  console.debug("putMyStoriesOnPage", );
-  $myStories.empty();
-
-  if(currentUser.ownStories.length > 0) {
-    // loop through all of our stories and generate HTML for them
-    for (let story of currentUser.ownStories) {
-      const $story = generateStoryMarkup(new Story(story));
-      $myStories.append($story);
-    }
-    addFavoriteStars('my-stories')
-    //add click hadler for starring favorites on class star
-    $(".star").on("click", favoriteStory)
-    //add click hadler for removing stories on class trash-can
-    $(".trash-can").on("click", deleteStory)
-  } else {
-    $myStories.html('<h5>You have submitted no stories!</h5>')
-    $myStories.show();
-  }
-}
-
-/**
- * Gets input from Submit story, makes a new Story instance and adds it to page
- * 
- */
+// /**
+//  * Gets input from Submit story, makes a new Story instance and adds it to page
+//  * 
+//  */
 
 async function createStoryFromForm(evt) {
   evt.preventDefault();
@@ -125,20 +129,24 @@ async function createStoryFromForm(evt) {
     url: $url, 
   }
   //call static function in models.js to add newStory to DB
+  console.log('storyList', storyList)
   let $res = await StoryList.addStory(currentUser, newStory)
+  storyList = await StoryList.getStories();
+  console.log('the storyList is ', )
   //reset input fields
   $('#create-author').val('')
   $('#create-title').val('')
   $('#create-url').val('')
-  //hide form with animation
-  $submitForm.slideUp()
   
   //reload all stories from DB
-  $allStoriesList.empty();
-  putStoriesOnPage();
+  // console.log('res is ', $res)
+  // console.log('add new story to current User ', new Story($res))
+  // $allStoriesList.append( generateStoryMarkup(new Story($res))
+  putStories(evt);
+  //hide form with animation
+  $submitForm.slideUp()
   //add story to currentUser ownStories
-  console.log('add new story to current User ', $res)
-  console.log('currentUSer, ', currentUser)
+  // console.log('currentUSer, ', currentUser)
   currentUser.ownStories.push($res)
 }
 
@@ -161,7 +169,7 @@ function favoriteStory() {
     //not a favorite story
     $(this).children().removeClass('fas').addClass('far')
     //remove story from favorites array and localStorage by passing id 
-    removeFavoriteStory($(this).parent()[0].id)
+    removeFavoriteStoryFromUser($(this).parent()[0].id)
   }
 }
 
@@ -187,7 +195,7 @@ function addFavoriteStory(opId) {
  * removes favorite story from storyList to favoriteStoryList and localStorage
  * @param {string} - story id
  */
-function removeFavoriteStory(opId) {
+function removeFavoriteStoryFromUser(opId) {
   //remove favorite story from user favorites
   currentUser.favorites = currentUser.favorites.filter(story => {
     return story.storyId !== opId
@@ -201,46 +209,38 @@ function removeFavoriteStory(opId) {
  * needs currentUser to get token for acces to API (protected call)
  */
 async function deleteStory() {
-  console.log('deleting ', $(this).parent()[0].id)
-  console.log('deleting from ',  $(this).closest('ol')[0].id)
   let $storyId = $(this).parent()[0].id
-  let $list = $(this).closest('ol')[0].id
   try {
     //remove Story from storyList
     await StoryList.deleteStory(currentUser, $storyId)
-
-    // console.log('delete from favorites', $(this).closest('ol')[0].id)
-    removeFavoriteStory($storyId)
-    if( $list === 'all-stories-list') {
-      $(`#${$list} #${$storyId}`).remove()
-      // putStoriesOnPage()
-    } else if( $list === 'favorited-stories'){
-      console.log('running here')
-      //reload stories list
-      putFavoriteStoriesOnPage()
-      // putStoriesOnPage()
-    } else if($list === 'my-stories') {
-      $(`#${$list} #${$storyId}`).remove()
-    }
+    //reload  storylist
+    storyList = await StoryList.getStories();
+    //remove story from user class
+    removeFavoriteStoryFromUser($storyId)
+    //remove story from all instances in DOM
+    removeStoryFromDOM($storyId)
   } catch(e) {
     console.log('the error ', e)
     alert('Not your story to delete !')
-
   }
 }
-
 
 /**
  * updates star in UI to be filled if the user has farvorited a story
  */
 function addFavoriteStars(list) {
+  console.log('starring ', list[0].id)
+  let listId = list[0].id
   //check if we are in the favorites tab and add stars to that list
   // console.log('running stars', $(`#${list}`).children())
-  $(`#${list}`).children().each((i, li) => {
+  $(`#${listId}`).children().each((i, li) => {
     for(let fav of currentUser.favorites) {
       if(fav.storyId === li.id) {
-        $(`#${list} #${li.id} .star i`).removeClass('far').addClass('fas')
+        console.log('add star to ', li.id)
+        $(`#${listId} #${li.id} .star i`).removeClass('far').addClass('fas')
       }
     }
   })
 } 
+
+
