@@ -26,7 +26,6 @@ async function getAndShowStoriesOnStart() {
  */
 
 function generateStoryMarkup(story) {
-  // console.log('marking up ', story)
   const hostName = story.getHostName();
   return $(`
       <li id="${story.storyId}">
@@ -45,6 +44,11 @@ function generateStoryMarkup(story) {
       </li>
     `);
 }
+
+/**
+  * takes an event and figures out what tab we are on and what list of stories to display
+  * @param {evt} - the event that was fired by clicking a nav button or the submit story form
+*/
 
 function getStoryParams(evt) {
   let $targetId
@@ -109,10 +113,7 @@ function putStories(evt) {
   $(".star").on("click", favoriteStory)
   //add click hadler for removing stories on class trash-can
   $(".trash-can").on("click", deleteStory)
-
-
 }
-
 
 // /**
 //  * Gets input from Submit story, makes a new Story instance and adds it to page
@@ -131,19 +132,12 @@ async function createStoryFromForm(evt) {
     url: $url, 
   }
   //call static function in models.js to add newStory to DB
-  console.log('storyList', storyList)
   let $res = await StoryList.addStory(currentUser, newStory)
-  storyList = await StoryList.getStories();
-  console.log('the storyList is ', )
-  //reset input fields
-  $('#create-author').val('')
-  $('#create-title').val('')
-  $('#create-url').val('')
-  
   //reload all stories from DB
-  // console.log('res is ', $res)
-  // console.log('add new story to current User ', new Story($res))
-  // $allStoriesList.append( generateStoryMarkup(new Story($res))
+  storyList = await StoryList.getStories();
+  //reset input fields
+  $submitForm.trigger('reset')
+
   putStories(evt);
   //hide form with animation
   $submitForm.slideUp()
@@ -189,7 +183,6 @@ function addFavoriteStory(opId) {
       console.log('currentUser favs', currentUser.favorites)
     }
   }
-  // console.log('addin ', currentUser.favorites)
   saveUserFavoriteStoriesLocalStorage(currentUser.favorites)
 }
 
@@ -219,8 +212,7 @@ async function deleteStory() {
     storyList = await StoryList.getStories();
     //remove story from user class
     removeFavoriteStoryFromUser($storyId)
-    //remove story from all instances in DOM
-    removeStoryFromDOM($storyId)
+    putStories()
   } catch(e) {
     console.log('the error ', e)
     alert('Not your story to delete !')
@@ -229,12 +221,12 @@ async function deleteStory() {
 
 /**
  * updates star in UI to be filled if the user has farvorited a story
+ * @param {list} - the OL that needs to be updated : either #all-stories, #favorited-stories, or #my-stories
  */
 function addFavoriteStars(list) {
-  console.log('starring ', list[0].id)
+  //check which tab we are in so we can update the appropriate OL
   let listId = list[0].id
-  //check if we are in the favorites tab and add stars to that list
-  // console.log('running stars', $(`#${list}`).children())
+  // loop through all LIs for approprite OL and fill start if there is a match from currentUser.favorites
   $(`#${listId}`).children().each((i, li) => {
     for(let fav of currentUser.favorites) {
       if(fav.storyId === li.id) {
