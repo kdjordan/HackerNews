@@ -101,7 +101,9 @@ function putStories(evt) {
 
   //display the html
   $currentStoryList.show();
-  addFavoriteStars($currentStoryList)
+  if(currentUser) {
+    addFavoriteStars($currentStoryList)
+  }
 
   //add click hadler for starring favorites on class star
   $(".star").on("click", favoriteStory)
