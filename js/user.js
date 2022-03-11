@@ -2,11 +2,14 @@
 
 // global to hold the User instance of the currently-logged-in user
 let currentUser;
+
 /******************************************************************************
  * User login/signup/login
  */
 
-/** Handle login form submission. If login ok, sets up the user instance */
+/** Handle login form submission. If login ok, sets up the user instance 
+ * If not we alert the user that there is an issue with the login credientials
+*/
 
 async function login(evt) {
   evt.preventDefault();
@@ -17,12 +20,16 @@ async function login(evt) {
 
   // User.login retrieves user info from API and returns User instance
   // which we'll make the globally-available, logged-in user.
-  currentUser = await User.login(username, password);
-
-  $loginForm.trigger("reset");
-
-  saveUserCredentialsInLocalStorage();
-  updateUIOnUserLogin();
+  try {
+    currentUser = await User.login(username, password);
+  
+    $loginForm.trigger("reset");
+  
+    saveUserCredentialsInLocalStorage();
+    updateUIOnUserLogin();
+  } catch(e) {
+    alert('Username or password is incorrect !')
+  }
 }
 
 $loginForm.on("submit", login);

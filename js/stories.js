@@ -11,10 +11,12 @@ async function getAndShowStoriesOnStart() {
   //check for existence of favoritesStories in localStorage
   checkStoriesLocalStorage()
   
-  console.log('current user ', currentUser)
+  //get the current stories that will be displayed for all-stories list from DB
   storyList = await StoryList.getStories();
   
   $storiesLoadingMsg.remove();
+
+  //add the stories to the DOM
   putStories();
 }
 
@@ -54,8 +56,9 @@ function getStoryParams(evt) {
   let $targetId
   let $currentStoryList
   let $storiesToShow
+
   //handle edge case where no event is passed on loading of page, but we need a OL to populate
-  //we'll give it 'nav-all' since we are on the homepage
+  //we'll give it 'nav-all' since we are on the homepage (intial paint of page on log in)
   if(!evt) {
     $targetId = 'nav-all'
   } else {
@@ -80,12 +83,17 @@ function getStoryParams(evt) {
   }
 }
 
+/**
+  * takes an event and displays the proper stories in the proper spot
+  * by proper spot we mean that we have different lists (all stories/favorites/ownstories)
+  * this function discovers where the evt came form using 'getStoryParams' and deduces what list should
+  * be populated
+  * @param {evt} - the event that was fired by clicking a nav button or the submit story form
+*/
+
 function putStories(evt) {
-  console.log('putting story ', evt)
   let {$currentStoryList,  $storiesToShow} = getStoryParams(evt) 
   
-  console.log('emptying ', $currentStoryList)
-  console.log('using ', $storiesToShow)
   //prepare our OL to get the list
   $currentStoryList.empty()
 
@@ -210,13 +218,30 @@ async function deleteStory() {
     await StoryList.deleteStory(currentUser, $storyId)
     //reload  storylist
     storyList = await StoryList.getStories();
-    //remove story from user class
+    //remove story from user favorites
     removeFavoriteStoryFromUser($storyId)
+    //remove story from user ownFavorites
+    deleteStoryFromOwnStories($storyId)
+    console.log('user after dleete ', currentUser)
     putStories()
   } catch(e) {
     console.log('the error ', e)
     alert('Not your story to delete !')
   }
+}
+
+/**
+ * deletes story from currentUser's ownStories
+ * @param {storyID} - the story to remove form the currentUSer ownStories Array
+ */
+function deleteStoryFromOwnStories(opId) {
+  //remove favorite story from user favorites
+  currentUser.ownStories = currentUser.ownStories.filter(story => {
+    return story.storyId !== opId
+  })
+  //update localStorage with ownStories
+  saveOwnStoriesLocalStorage(currentUser.ownStories)
+
 }
 
 /**
@@ -230,7 +255,6 @@ function addFavoriteStars(list) {
   $(`#${listId}`).children().each((i, li) => {
     for(let fav of currentUser.favorites) {
       if(fav.storyId === li.id) {
-        console.log('add star to ', li.id)
         $(`#${listId} #${li.id} .star i`).removeClass('far').addClass('fas')
       }
     }
